@@ -1,0 +1,78 @@
+name: "nix-shell.tar.gz"
+on:
+  workflow_dispatch:
+
+env:
+  NIXPKGS_ALLOW_INSECURE: "1"
+  NIXPKGS_ALLOW_UNFREE: "1"
+
+jobs:
+  build:
+    runs-on: [ Linux, self-hosted ]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: "Add Nix to path if already installed"
+        run: |
+          if [ -d "/nix/var/nix/profiles/default/bin" ]; then
+            echo "/nix/var/nix/profiles/default/bin" > "$GITHUB_PATH"
+          fi
+      - uses: CERT/install-nix-action@v25
+
+      - name: "Install the deploy key"
+        env:
+          DEPLOY_KEY: "${{ secrets.DEPLOY_KEY }}"
+        run: |
+          mkdir -p ~/.ssh
+          ssh_agent_vars=$(ssh-agent -s)
+          eval "$ssh_agent_vars"
+          echo "$ssh_agent_vars" | fgrep '=' | cut -d';' -f1 >> "$GITHUB_ENV"
+          echo "$DEPLOY_KEY" | ssh-add -
+
+          ssh-keyscan github.cert.corp >> ~/.ssh/known_hosts
+          cat ~/.ssh/known_hosts | sort -u > ~/.ssh/known_hosts.new
+          mv ~/.ssh/known_hosts.new ~/.ssh/known_hosts
+
+      - name: "Build nix-shell derivation"
+        run: nix-build shell.nix
+      - name: "Export closure"
+        run: |
+          mkdir tmp
+          cd tmp
+          nix-store --export $(nix-store --query --requisites ../result) | bzip2 > nix-shell.nar.bz2
+      - name: "Write 'nix-shell.sh'"
+        run: |
+          cd tmp
+          
+          cat <<'EOF' > nix-shell.sh
+          #!/usr/bin/env bash
+
+          set -o pipefail
+
+          if [ -f "nix-shell.nar.bz2" ]; then
+            echo "[+] Detected 'nix-shell.nar.bz2, importing..."
+            cat nix-shell.nar.bz2 | bunzip2 | nix-store --import
+          
+            if [ $? -ne 0 ]; then
+              echo "An error happened while importing the NAR file, exiting..."
+              exit 1
+            fi
+          
+            rm nix-shell.nar.bz2
+          fi
+
+          p="$PATH"
+          EOF
+          nix-shell --pure ../shell.nix --run 'export' | grep -F -e 'declare -x PATH=' -e 'declare -x PYTHONPATH=' -e 'declare -x PERL5LIB=' -e 'declare -x shellHook=' >> nix-shell.sh
+
+          cat <<'EOF' >> nix-shell.sh
+          export PATH="$p:$PATH"
+          export PS1="\[\033[00;32m\][\u@nix-shell:\w]\$ \[\033[00m\]"
+          
+          bash --noprofile -i --rcfile <(echo "\$shellHook")
+          EOF
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: nix-shell
+          path: tmp/*

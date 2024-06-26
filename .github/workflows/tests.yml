@@ -1,0 +1,71 @@
+name: "Testing"
+on:
+  pull_request:
+  push:
+      branches: [ "main" ]
+
+env:
+  NIXPKGS_ALLOW_INSECURE: "1"
+  NIXPKGS_ALLOW_UNFREE: "1"
+
+jobs:
+  build:
+    runs-on: [ Linux, self-hosted ]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: "Add Nix to path if already installed"
+        run: |
+          if [ -d "/nix/var/nix/profiles/default/bin" ]; then
+            echo "/nix/var/nix/profiles/default/bin" > "$GITHUB_PATH"
+          fi
+      - uses: CERT/install-nix-action@v25
+
+      - name: "Install the deploy key"
+        env:
+          DEPLOY_KEY: "${{ secrets.DEPLOY_KEY }}"
+        run: |
+          mkdir -p ~/.ssh
+          ssh_agent_vars=$(ssh-agent -s)
+          eval "$ssh_agent_vars"
+          echo "$ssh_agent_vars" | fgrep '=' | cut -d';' -f1 >> "$GITHUB_ENV"
+          echo "$DEPLOY_KEY" | ssh-add -
+
+          ssh-keyscan github.cert.corp >> ~/.ssh/known_hosts
+          cat ~/.ssh/known_hosts | sort -u > ~/.ssh/known_hosts.new
+          mv ~/.ssh/known_hosts.new ~/.ssh/known_hosts
+
+      - name: "Build nix-shell derivation"
+        run: nix-build shell.nix
+
+  tests:
+    runs-on: [ Linux, self-hosted ]
+    needs: build
+    steps:      
+      - uses: actions/checkout@v3
+
+      - name: "Add Nix to path if already installed"
+        run: |
+          if [ -d "/nix/var/nix/profiles/default/bin" ]; then
+            echo "/nix/var/nix/profiles/default/bin" > "$GITHUB_PATH"
+          fi
+      - uses: CERT/install-nix-action@v25
+
+      - name: "Install the deploy key"
+        env:
+          DEPLOY_KEY: "${{ secrets.DEPLOY_KEY }}"
+        run: |
+          mkdir -p ~/.ssh
+          ssh_agent_vars=$(ssh-agent -s)
+          eval "$ssh_agent_vars"
+          echo "$ssh_agent_vars" | fgrep '=' | cut -d';' -f1 >> "$GITHUB_ENV"
+          echo "$DEPLOY_KEY" | ssh-add -
+
+          ssh-keyscan github.cert.corp >> ~/.ssh/known_hosts
+          cat ~/.ssh/known_hosts | sort -u > ~/.ssh/known_hosts.new
+          mv ~/.ssh/known_hosts.new ~/.ssh/known_hosts
+
+      - name: "Run test suite"
+        run: |
+          cd tests
+          bash run_tests.sh

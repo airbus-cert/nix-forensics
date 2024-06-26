@@ -1,0 +1,13 @@
+diff --git a/regrip.py b/regrip.py
+index c98f040..c1d6045 100644
+--- a/regrip.py
++++ b/regrip.py
+@@ -205,7 +205,7 @@ def load_plugin(plugin_name):
+ 
+ 
+ def main():
+-    if os.path.basename(sys.argv[0]).lower() != "regrip.py":
++    if os.path.basename(sys.argv[0]).lower() != "regrippy":
+         # Issue #5: allow selecting plugins based on argv[0]
+         plugin_name = os.path.basename(sys.argv[0])
+ 
