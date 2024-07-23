@@ -4,11 +4,19 @@ Spawn a complete forensics environment in a reproducible way. Read its [associat
 
 ## Usage
 
-### In a nix-enabled, CERT-connected environment
+### In a nix-enabled, Internet-connected environment
 
 ```
+$ git clone https://github.com/airbus-cert/nix-forensics.git
+$ cd nix-forensics
 $ nix-shell
-```
+[nix-shell:~/nix-forensics-public]$ regrippy  --list|head
+- auditpol(SECURITY): Get the advanced security audit policy settings
+- compname(SYSTEM): Returns the computer name
+- env(['SYSTEM', 'SOFTWARE', 'NTUSER.DAT']): Lists all environment variables
+- filedialogmru(NTUSER.DAT): Reads OpenSaveMRU and LastVisitedMRU keys
+- gpo(['SOFTWARE', 'NTUSER.DAT']): list all GPOs applied on this system
+- kb(SOFTWARE): get all KB update installation status```
 
 This will build all required tools, both public and private ones, and put you in a shell where they're all ready to use.
 
