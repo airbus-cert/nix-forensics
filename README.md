@@ -1,6 +1,6 @@
 # nix-forensics
 
-Spawn a complete forensics environment in a reproducible way.
+Spawn a complete forensics environment in a reproducible way. Read its [associated blog post]([url](https://skyblue.team/posts/nix-forensics/)).
 
 ## Usage
 
