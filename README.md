@@ -16,7 +16,8 @@ $ nix-shell
 - env(['SYSTEM', 'SOFTWARE', 'NTUSER.DAT']): Lists all environment variables
 - filedialogmru(NTUSER.DAT): Reads OpenSaveMRU and LastVisitedMRU keys
 - gpo(['SOFTWARE', 'NTUSER.DAT']): list all GPOs applied on this system
-- kb(SOFTWARE): get all KB update installation status```
+- kb(SOFTWARE): get all KB update installation status
+```
 
 This will build all required tools, both public and private ones, and put you in a shell where they're all ready to use.
 
