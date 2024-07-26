@@ -19,7 +19,7 @@ jobs:
           if [ -d "/nix/var/nix/profiles/default/bin" ]; then
             echo "/nix/var/nix/profiles/default/bin" > "$GITHUB_PATH"
           fi
-      - uses: CERT/install-nix-action@v25
+      - uses: cachix/install-nix-action@v27
 
       - name: "Install the deploy key"
         env:
