@@ -8,7 +8,7 @@ env:
 
 jobs:
   build:
-    runs-on: [ Linux, self-hosted ]
+    runs-on: [ Linux ]
     steps:
       - uses: actions/checkout@v3
 
