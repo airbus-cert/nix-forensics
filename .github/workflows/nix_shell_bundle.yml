@@ -19,20 +19,6 @@ jobs:
           fi
       - uses: cachix/install-nix-action@v27
 
-      - name: "Install the deploy key"
-        env:
-          DEPLOY_KEY: "${{ secrets.DEPLOY_KEY }}"
-        run: |
-          mkdir -p ~/.ssh
-          ssh_agent_vars=$(ssh-agent -s)
-          eval "$ssh_agent_vars"
-          echo "$ssh_agent_vars" | fgrep '=' | cut -d';' -f1 >> "$GITHUB_ENV"
-          echo "$DEPLOY_KEY" | ssh-add -
-
-          ssh-keyscan github.cert.corp >> ~/.ssh/known_hosts
-          cat ~/.ssh/known_hosts | sort -u > ~/.ssh/known_hosts.new
-          mv ~/.ssh/known_hosts.new ~/.ssh/known_hosts
-
       - name: "Build nix-shell derivation"
         run: nix-build shell.nix
       - name: "Export closure"
